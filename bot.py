@@ -14,34 +14,31 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY)
 
 ANTIQUE_PROMPT = (
-    "Ты — опытный антиквар. Рассмотри фото внимательно. "
-    "Это может быть фигурка, статуэтка, украшение или другой предмет. "
-    "Ответь строго по пунктам:\n"
-    "1. Название предмета (что именно изображено).\n"
-    "2. Примерный возраст (век, период, десятилетие).\n"
-    "3. Материалы и техника изготовления.\n"
-    "4. Состояние (сохранность, дефекты, следы времени).\n"
-    "5. Ориентировочная рыночная стоимость в рублях.\n"
-    "Если ты не уверен в чём-то, честно напиши 'не могу определить'. "
-    "Не придумывай несуществующих деталей."
+    "Ты — антиквар. Рассмотри фото предмета. Если видишь фигурку, статуэтку, украшение – определи материал (кость, дерево, металл, камень). "
+    "Ответь кратко и чётко по пунктам, **не придумывай** несуществующих деталей. Если сомневаешься – напиши 'не уверен'.\n"
+    "1. Название предмета (конкретно).\n"
+    "2. Примерный возраст (век, период).\n"
+    "3. Материал и техника изготовления.\n"
+    "4. Состояние (сохранность, дефекты).\n"
+    "5. Ориентировочная стоимость в рублях.\n"
+    "Если не знаешь – так и скажи."
 )
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "🕵️ Привет! Отправь фото старинного предмета, и я опишу его и оценю.\n"
-                          "📸 Постарайся сфотографировать предмет при хорошем освещении, с разных сторон.")
+    bot.reply_to(message, "🕵️ Отправь фото старинного предмета – я опишу и оценю.")
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     try:
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
-        bot.reply_to(message, "🔍 Анализирую... Подождите немного.")
+        bot.reply_to(message, "🔍 Анализирую... Подождите.")
 
         base64_image = base64.b64encode(downloaded_file).decode('utf-8')
 
         response = client.chat.completions.create(
-            model="qwen/qwen2.5-vl-32b-instruct:free",   # <-- специальная модель для зрения
+            model="openrouter/free",   # <-- универсальный маршрутизатор
             messages=[
                 {
                     "role": "user",
@@ -63,7 +60,7 @@ def handle_photo(message):
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
     if message.text.lower() == '/help':
-        bot.reply_to(message, "📸 Отправь мне фото старинного предмета, и я опишу его и примерно оценю стоимость.")
+        bot.reply_to(message, "📸 Отправь фото – я опишу и оценю предмет.")
     else:
         bot.reply_to(message, "Пришли мне фото!")
 
