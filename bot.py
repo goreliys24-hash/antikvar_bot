@@ -42,7 +42,7 @@ def handle_photo(message):
 
         # === ИСПОЛЬЗУЕМ openrouter/free (самый надёжный) ===
         response = client.chat.completions.create(
-            model="openrouter/free",   # <-- заменили на универсальный
+           model="google/gemini-2.5-flash-lite:free", ,   # <-- заменили на универсальный
             messages=[
                 {
                     "role": "user",
@@ -63,10 +63,16 @@ def handle_photo(message):
         error_text = f"❌ Ошибка: {str(e)}"
         bot.reply_to(message, error_text)
 
-@bot.message_handler(content_types=['text'])
-def echo_text(message):
-    bot.reply_to(message, "Пришли мне фото!")
-
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, 
+        "🕵️ Привет! Я бот-антиквар.\n"
+        "📸 Для точной оценки присылай фото:\n"
+        "- при хорошем освещении\n"
+        "- с разных ракурсов (если возможно)\n"
+        "- добавь в описание, что знаешь о предмете\n\n"
+        "Отправь фото, и я опишу и оценю его."
+    )
 if __name__ == '__main__':
     while True:
         try:
