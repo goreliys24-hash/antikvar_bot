@@ -2,10 +2,8 @@ import telebot
 import base64
 import os
 import time
-import logging
 from openai import OpenAI
 
-# === ЧИТАЕМ ТОКЕНЫ ===
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
@@ -15,21 +13,20 @@ if not TELEGRAM_TOKEN or not OPENROUTER_API_KEY:
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY)
 
-# === ПРОМПТ ===
 ANTIQUE_PROMPT = (
-    "Ты — опытный антиквар. Внимательно рассмотри фото. "
-    "Дай ответ строго по пунктам:\n"
+    "Ты — опытный антиквар. Рассмотри фото внимательно.\n"
+    "Ответь по пунктам:\n"
     "1. Название предмета.\n"
-    "2. Примерный возраст (век или период).\n"
-    "3. Материал и техника.\n"
+    "2. Примерный возраст (век/период).\n"
+    "3. Материалы и техника.\n"
     "4. Состояние (сохранность).\n"
-    "5. Предположительная рыночная стоимость в рублях.\n"
-    "Если не уверен, напиши 'не могу точно определить'."
+    "5. Ориентировочная стоимость в рублях.\n"
+    "Если не уверен — напиши 'не могу определить'."
 )
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "🕵️ Привет! Отправь фото старинного предмета — я опишу и оценю.")
+    bot.reply_to(message, "🕵️ Привет! Отправь фото старинного предмета для описания и оценки.")
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
@@ -40,9 +37,8 @@ def handle_photo(message):
 
         base64_image = base64.b64encode(downloaded_file).decode('utf-8')
 
-        # === ИСПОЛЬЗУЕМ openrouter/free (самый надёжный) ===
         response = client.chat.completions.create(
-           model="google/gemini-2.5-flash-lite:free", ,   # <-- заменили на универсальный
+            model="openrouter/free",
             messages=[
                 {
                     "role": "user",
@@ -59,20 +55,12 @@ def handle_photo(message):
         bot.reply_to(message, answer)
 
     except Exception as e:
-        # Теперь ошибка будет видна пользователю
-        error_text = f"❌ Ошибка: {str(e)}"
-        bot.reply_to(message, error_text)
+        bot.reply_to(message, f"❌ Ошибка: {str(e)}")
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, 
-        "🕵️ Привет! Я бот-антиквар.\n"
-        "📸 Для точной оценки присылай фото:\n"
-        "- при хорошем освещении\n"
-        "- с разных ракурсов (если возможно)\n"
-        "- добавь в описание, что знаешь о предмете\n\n"
-        "Отправь фото, и я опишу и оценю его."
-    )
+@bot.message_handler(content_types=['text'])
+def echo_text(message):
+    bot.reply_to(message, "Пришли мне фото!")
+
 if __name__ == '__main__':
     while True:
         try:
