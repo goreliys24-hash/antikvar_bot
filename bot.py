@@ -5,17 +5,17 @@ import time
 import logging
 from openai import OpenAI
 
-# === ЧИТАЕМ ТОКЕНЫ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ===
+# === ЧИТАЕМ ТОКЕНЫ ===
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
 if not TELEGRAM_TOKEN or not OPENROUTER_API_KEY:
-    raise ValueError("Не заданы TELEGRAM_BOT_TOKEN или OPENROUTER_API_KEY")
+    raise ValueError("Не заданы переменные окружения")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY)
 
-# === ПРОМПТ ДЛЯ АНТИКВАРА ===
+# === ПРОМПТ ===
 ANTIQUE_PROMPT = (
     "Ты — опытный антиквар. Внимательно рассмотри фото. "
     "Дай ответ строго по пунктам:\n"
@@ -40,8 +40,9 @@ def handle_photo(message):
 
         base64_image = base64.b64encode(downloaded_file).decode('utf-8')
 
+        # === ИСПОЛЬЗУЕМ openrouter/free (самый надёжный) ===
         response = client.chat.completions.create(
-            model="qwen/qwen2.5-vl-32b-instruct:free",
+            model="openrouter/free",   # <-- заменили на универсальный
             messages=[
                 {
                     "role": "user",
@@ -58,7 +59,9 @@ def handle_photo(message):
         bot.reply_to(message, answer)
 
     except Exception as e:
-        bot.reply_to(message, f"❌ Ошибка. Попробуйте другое фото.")
+        # Теперь ошибка будет видна пользователю
+        error_text = f"❌ Ошибка: {str(e)}"
+        bot.reply_to(message, error_text)
 
 @bot.message_handler(content_types=['text'])
 def echo_text(message):
